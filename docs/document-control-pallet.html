@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+<title>Document Control Pallet | ระบบพิมพ์ป้ายอัจฉริยะ</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: linear-gradient(145deg,#f0f4fa 0%,#e9eef5 100%); font-family: 'Sarabun', 'Inter', sans-serif; }
+  
+  /* LOGIN PAGE LUXURY */
+  .login-overlay { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: radial-gradient(circle at 50% 50%, #0f172a, #020617);
+    z-index: 10000; display: flex; align-items: center; justify-content: center; 
+    animation: fadeIn 0.8s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  .login-card {
+    background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(40px);
+    border-radius: 2.5rem; padding: 3.5rem 3rem;
+    width: 90%; max-width: 420px; border: 1px solid rgba(255, 255, 255, 0.1); 
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    text-align: center; animation: slideUp 0.8s ease-out;
+  }
+  @keyframes slideUp { from { transform:translateY(30px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+  .login-logo { font-size:4rem; color: #f8fafc; margin-bottom: 0.5rem; }
+  .login-card h1 { font-size:2.2rem; font-weight: 700; color: #fff; margin-bottom:0.5rem; }
+  .login-sub { color:#94a3b8; font-size:0.8rem; letter-spacing:0.2em; margin-bottom:2.5rem; text-transform: uppercase; }
+  .input-group { position:relative; margin-bottom:1.5rem; }
+  .input-icon { position:absolute; left:20px; top:50%; transform:translateY(-50%); color:#64748b; font-size:1rem; }
+  .login-input { width:100%; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:1rem; padding:1rem 1.2rem 1rem 3rem; color:white; font-size:1rem; outline:none; transition:0.3s; }
+  .login-input:focus { border-color:#e31e24; background:rgba(0,0,0,0.3); }
+  .login-btn { background:#e11d48; width:100%; padding:1rem; border-radius:1rem; font-weight:600; color:white; cursor:pointer; border:none; margin-top:1rem; transition:0.3s; }
+  .login-btn:hover { background:#be123c; transform:translateY(-2px); }
+  .error-msg { background:rgba(239, 68, 68, 0.1); border-radius:1rem; padding:0.8rem; margin-top:1rem; font-size:0.85rem; color:#fca5a5; border: 1px solid rgba(239, 68, 68, 0.2); }
+  .demo-hint { font-size:0.75rem; color:#475569; margin-top:1.5rem; }
+  
+  /* MAIN APP LUXURY */
+  .sidebar { background: linear-gradient(180deg, #0f172a 0%, #0a0f1c 100%); border-right: 1px solid rgba(227,30,36,0.2); }
+  .tab-btn { transition: 0.25s; border-radius: 16px 0 0 16px; margin: 4px 0; }
+  .tab-btn.active { background: linear-gradient(95deg, #1e293b, #0f172a); color: white; border-left: 4px solid #e31e24; }
+</style>
+</head>
+<body>
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-logo"><i class="fas fa-barcode"></i></div>
+    <h1 style="font-size: 1.8rem; letter-spacing: 0.05em; color: #fff; margin-bottom: 0.5rem; font-weight: 500;">Document Control</h1>
+    <div class="login-sub">Pallet Management System</div>
+    <div class="input-group"><i class="fas fa-user input-icon"></i><input type="text" id="loginUsername" class="login-input" placeholder="User Name"></div>
+    <div class="input-group"><i class="fas fa-lock input-icon"></i><input type="password" id="loginPassword" class="login-input" placeholder="Password"></div>
+    <button class="login-btn" id="doLoginBtn" onclick="doLogin()">Login</button>
+    <div id="loginError" class="error-msg" style="display:none;"></div>
+    <div class="demo-hint" style="color: #64748b;">Credentials: admin / admin123</div>
+  </div>
+</div>
+<div id="mainApp" style="display:none;"><div id="appRoot"></div></div>
+<script>
+(function(){
+  const loginBtn = document.getElementById('doLoginBtn');
+  const usernameInput = document.getElementById('loginUsername');
+  const passwordInput = document.getElementById('loginPassword');
+  const errorSpan = document.getElementById('loginError');
+  function doLogin(){
+    const user = usernameInput.value.trim();
+    const pass = passwordInput.value.trim();
+    if(user === 'admin' && pass === 'admin123'){
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+      document.getElementById('appRoot').innerHTML = '<div style="padding:2rem;font-family:sans-serif">Logged in.</div>';
+    } else {
+      if(errorSpan){ errorSpan.style.display = 'block'; errorSpan.innerText = '❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (admin / admin123)'; }
+      if(passwordInput) passwordInput.value = '';
+      if(passwordInput) passwordInput.focus();
+    }
+  }
+  window.doLogin = doLogin;
+  if(passwordInput) passwordInput.addEventListener('keypress', (e)=>{ if(e.key==='Enter') doLogin(); });
+})();
+</script>
+</body>
+</html>
