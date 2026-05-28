@@ -1,92 +1,179 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>Control Pallet Document | Complete Working System</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Control Pallet Document | Working Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: linear-gradient(145deg, #f0f4fa 0%, #e9eef5 100%); font-family: 'Sarabun', 'Inter', sans-serif; }
+    body { font-family: 'Sarabun', 'Inter', sans-serif; background:#eef2ff; }
+    .hidden-app { display:none; }
   </style>
 </head>
 <body>
-<div class="login-overlay" id="loginOverlay">
-  <div class="floating-icon" style="top: 10%; left: 5%; animation-duration: 20s;"><i class="fas fa-pallet"></i></div>
-  <div class="floating-icon" style="bottom: 15%; right: 8%; animation-duration: 18s; animation-delay: 2s;"><i class="fas fa-qrcode"></i></div>
-  <div class="floating-icon" style="top: 30%; right: 15%; animation-duration: 22s; animation-delay: 1s;"><i class="fas fa-barcode"></i></div>
-  <div class="floating-icon" style="bottom: 25%; left: 12%; animation-duration: 25s; animation-delay: 3s;"><i class="fas fa-truck"></i></div>
-  <div class="login-card">
-    <div class="login-logo"><i class="fas fa-pallet"></i><i class="fas fa-file-alt ms-2"></i></div>
-    <h1>Control pallet<br>Document</h1>
-    <div class="login-sub">COMPLETE WORKING SYSTEM</div>
-    <div class="input-group"><i class="fas fa-user input-icon"></i><input type="text" id="loginUsername" class="login-input" placeholder="ชื่อผู้ใช้งาน"></div>
-    <div class="input-group"><i class="fas fa-lock input-icon"></i><input type="password" id="loginPassword" class="login-input" placeholder="รหัสผ่าน"></div>
-    <button class="login-btn" id="doLoginBtn"><i class="fas fa-arrow-right-to-bracket"></i> เข้าสู่ระบบ</button>
-    <div id="loginError" class="error-msg" style="display:none;"></div>
-    <div class="demo-hint"><i class="fas fa-key"></i> admin / admin123 <i class="fas fa-print mx-2"></i> รีปริ้น: กรอกรหัสสาขา → เลื่อนไปรันนิ่ง → กรอกเลข เช่น 001,003-005 → พิมพ์ทันที</div>
+  <div id="loginOverlay" class="fixed inset-0 bg-slate-900/90 flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-slate-800 text-white rounded-3xl p-8">
+      <h1 class="text-2xl font-bold mb-2">Control pallet Document</h1>
+      <p class="text-slate-300 text-sm mb-6">ล็อกอินเพื่อใช้งานระบบพิมพ์ป้าย</p>
+      <input id="loginUsername" class="w-full mb-3 rounded-xl text-black" placeholder="Username" />
+      <input id="loginPassword" type="password" class="w-full mb-3 rounded-xl text-black" placeholder="Password" />
+      <button id="doLoginBtn" class="w-full bg-rose-600 rounded-xl py-2 font-bold">เข้าสู่ระบบ</button>
+      <p id="loginError" class="text-rose-300 mt-3 text-sm hidden"></p>
+      <p class="text-xs text-slate-400 mt-3">Credentials: admin / admin123</p>
+    </div>
   </div>
-</div>
-<div id="mainApp" style="display:none;"><div id="appRoot"></div></div>
-<div id="toastMsg" class="toast"></div>
-<div id="printAreaContainer"></div>
+
+  <div id="mainApp" class="hidden-app">
+    <header class="bg-white shadow p-4 flex justify-between items-center">
+      <h2 class="font-bold">Control Pallet Document</h2>
+      <div class="flex gap-2 items-center">
+        <span>คิว: <b id="queueCount">0</b></span>
+        <button id="printQueueBtn" class="bg-rose-700 text-white px-3 py-1 rounded-lg">พิมพ์คิว</button>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 grid md:grid-cols-2 gap-4">
+      <section class="bg-white rounded-2xl p-4 shadow">
+        <h3 class="font-bold mb-3">สร้างป้ายใหม่</h3>
+        <div class="space-y-2">
+          <input id="autoCode" maxlength="5" class="w-full rounded-xl" placeholder="รหัสสาขา 5 หลัก" />
+          <input id="autoQty" type="number" min="1" value="1" class="w-full rounded-xl" placeholder="จำนวน" />
+          <button id="autoCreateBtn" class="w-full bg-emerald-600 text-white rounded-xl py-2">เพิ่มเข้าคิว</button>
+        </div>
+        <div id="branchHint" class="mt-3 text-sm"></div>
+      </section>
+
+      <section class="bg-white rounded-2xl p-4 shadow">
+        <h3 class="font-bold mb-3">รีปริ้นจากรหัสสาขา + รันนิ่ง</h3>
+        <div class="space-y-2">
+          <input id="reprintBranchCode" maxlength="5" class="w-full rounded-xl" placeholder="รหัสสาขา" />
+          <input id="reprintSnList" class="w-full rounded-xl" placeholder="เช่น 001,003-005" />
+          <button id="reprintBtn" class="w-full bg-indigo-600 text-white rounded-xl py-2">สร้างเข้าคิวรีปริ้น</button>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-2xl p-4 shadow md:col-span-2">
+        <h3 class="font-bold mb-3">รายการคิว</h3>
+        <div id="queueList" class="space-y-2 text-sm"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="printAreaContainer" class="hidden"></div>
 
 <script>
-(function(){
-  // ---------- core state ----------
-  let BRANCH_DB = {};
-  let runningSequences = {};
-  let printQueue = [];
-  let printHistory = [];
-  let importedItems = [];
-  let isPrinting = false;
-  let resetTimeout = null;
-  let dailyChart = null, reprintChart = null;
-  let autoTimer = null;
-  let reprintAutoTimer = null;
-  const MAX_HISTORY = 5000;
-  
-  let fontSizes = { branchCode:3.8, branchAbbr:4.5, branchName:3.4, handwritingLabel:2.4, subItemText:0.9, snText:0.85, timestamp:0.55 };
-  let customize = { zoom:1, barcodeWidthMain:2.2, barcodeHeightMain:65, barcodeWidthSub:2.5, barcodeHeightSub:48 };
+(() => {
+  const BRANCH_DB = JSON.parse(localStorage.getItem('flow_branch_db') || '{"00001":{"name":"สำนักงานใหญ่","abbr":"HQ"},"00002":{"name":"สาขาสยาม","abbr":"SY"}}');
+  const runningSequences = JSON.parse(localStorage.getItem('flow_sequences') || '{}');
+  let printQueue = JSON.parse(localStorage.getItem('flow_queue') || '[]');
 
-  function showToast(msg, type='success'){
-    let toast = document.getElementById('toastMsg');
-    if(!toast) return;
-    let icon = type==='success'?'✅':(type==='error'?'❌':'ℹ️');
-    toast.innerHTML = `<div style="display:flex; align-items:center; gap:8px;">${icon}<span>${msg}</span></div>`;
-    toast.className = `toast show`;
-    setTimeout(()=>toast.classList.remove('show'),3000);
+  const save = () => {
+    localStorage.setItem('flow_branch_db', JSON.stringify(BRANCH_DB));
+    localStorage.setItem('flow_sequences', JSON.stringify(runningSequences));
+    localStorage.setItem('flow_queue', JSON.stringify(printQueue));
+  };
+
+  const showToast = (msg) => alert(msg);
+
+  const queueCount = document.getElementById('queueCount');
+  const queueList = document.getElementById('queueList');
+
+  function updateQueue() {
+    queueCount.textContent = printQueue.length;
+    queueList.innerHTML = printQueue.length ? printQueue.map((q, i) => `<div class="border rounded p-2 flex justify-between"><span>${q.barcode} | ${q.name}</span><button data-i="${i}" class="del text-rose-600">ลบ</button></div>`).join('') : '<p class="text-slate-500">ไม่มีรายการ</p>';
+    document.querySelectorAll('.del').forEach(btn => btn.onclick = () => {
+      printQueue.splice(Number(btn.dataset.i), 1);
+      save();
+      updateQueue();
+    });
   }
 
-  function doLogin(){
-    const usernameInput = document.getElementById('loginUsername');
-    const passwordInput = document.getElementById('loginPassword');
-    const errorSpan = document.getElementById('loginError');
-    const user = usernameInput.value.trim();
-    const pass = passwordInput.value.trim();
-    if(user === 'admin' && pass === 'admin123'){
-      document.getElementById('loginOverlay').style.display = 'none';
-      document.getElementById('mainApp').style.display = 'block';
-      document.getElementById('appRoot').innerHTML = '<div style="padding:2rem">Control Pallet Document loaded.</div>';
-      showToast('เข้าสู่ระบบสำเร็จ', 'success');
-    } else {
-      if(errorSpan){ errorSpan.style.display = 'block'; errorSpan.innerText = '❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (admin / admin123)'; }
-      passwordInput.value = '';
-      showToast('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'error');
+  function mkBarcode(code, sn, type='P') {
+    const d = new Date();
+    const dateCode = `${String(d.getDate()).padStart(2,'0')}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getFullYear()).slice(-2)}`;
+    return `${type}${dateCode}-${code}-${sn}`;
+  }
+
+  function createLabels(code, qty) {
+    const branch = BRANCH_DB[code];
+    if (!branch) return showToast('ไม่พบสาขา');
+    const today = new Date().toISOString().slice(0,10);
+    for (let i=0;i<qty;i++) {
+      const key = `${code}_${today}`;
+      runningSequences[key] = (runningSequences[key] || 0) + 1;
+      const sn = String(runningSequences[key]).padStart(3,'0');
+      printQueue.push({code, name: branch.name, sn, barcode: mkBarcode(code, sn), reprint:false});
     }
+    save(); updateQueue();
   }
 
-  const loginBtn = document.getElementById('doLoginBtn');
-  const passwordInput = document.getElementById('loginPassword');
-  if(loginBtn) loginBtn.addEventListener('click', doLogin);
-  if(passwordInput) passwordInput.addEventListener('keypress', (e)=>{ if(e.key==='Enter') doLogin(); });
+  function parseSN(input) {
+    const set = new Set();
+    input.split(',').map(s=>s.trim()).filter(Boolean).forEach(part => {
+      if (part.includes('-')) {
+        const [a,b] = part.split('-').map(n=>parseInt(n,10));
+        if (!isNaN(a) && !isNaN(b) && a <= b) for (let i=a;i<=b;i++) set.add(String(i).padStart(3,'0'));
+      } else if (/^\d+$/.test(part)) set.add(String(parseInt(part,10)).padStart(3,'0'));
+    });
+    return [...set];
+  }
+
+  function createReprint(code, raw) {
+    const branch = BRANCH_DB[code];
+    if (!branch) return showToast('ไม่พบสาขา');
+    const sns = parseSN(raw);
+    if (!sns.length) return showToast('รูปแบบรันนิ่งไม่ถูกต้อง');
+    sns.forEach(sn => printQueue.push({code, name: branch.name, sn, barcode: mkBarcode(code, sn), reprint:true}));
+    save(); updateQueue();
+  }
+
+  function startPrint() {
+    if (!printQueue.length) return showToast('ไม่มีป้ายในคิว');
+    const c = document.getElementById('printAreaContainer');
+    c.innerHTML = printQueue.map(item => `<div style="page-break-after:always;padding:24px;font-family:Inter,sans-serif"><h2>${item.code} ${item.name}</h2><svg id="b_${item.barcode.replace(/[^a-zA-Z0-9]/g,'')}"></svg><p>*${item.barcode}* SN:${item.sn}</p></div>`).join('');
+    printQueue.forEach(item => {
+      const id = `b_${item.barcode.replace(/[^a-zA-Z0-9]/g,'')}`;
+      JsBarcode(`#${id}`, item.barcode, {height:70, width:2, displayValue:false, margin:0});
+    });
+    window.print();
+  }
+
+  document.getElementById('doLoginBtn').onclick = () => {
+    const u = document.getElementById('loginUsername').value.trim();
+    const p = document.getElementById('loginPassword').value.trim();
+    if (u === 'admin' && p === 'admin123') {
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('mainApp').classList.remove('hidden-app');
+      updateQueue();
+    } else {
+      const err = document.getElementById('loginError');
+      err.classList.remove('hidden');
+      err.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+    }
+  };
+
+  document.getElementById('autoCode').addEventListener('input', (e) => {
+    const code = e.target.value.trim().padStart(5, '0');
+    const h = document.getElementById('branchHint');
+    h.innerHTML = BRANCH_DB[code] ? `✅ ${BRANCH_DB[code].abbr} - ${BRANCH_DB[code].name}` : '';
+  });
+
+  document.getElementById('autoCreateBtn').onclick = () => {
+    const code = document.getElementById('autoCode').value.trim().padStart(5,'0');
+    const qty = parseInt(document.getElementById('autoQty').value,10);
+    if (!/^\d{5}$/.test(code) || !qty || qty < 1) return showToast('ข้อมูลไม่ถูกต้อง');
+    createLabels(code, qty);
+  };
+
+  document.getElementById('reprintBtn').onclick = () => {
+    const code = document.getElementById('reprintBranchCode').value.trim().padStart(5,'0');
+    const sn = document.getElementById('reprintSnList').value.trim();
+    createReprint(code, sn);
+  };
+
+  document.getElementById('printQueueBtn').onclick = startPrint;
 })();
 </script>
 </body>
